@@ -1,0 +1,3 @@
+# {{PROJECT_NAME}}
+
+This is a Next.js Sui dApp project...
