@@ -1,4 +1,4 @@
-import { getFullnodeUrl, SuiClient } from "@mysten/sui.js/client";
+import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { createNetworkConfig } from "@mysten/dapp-kit";
 
 type Network = "mainnet" | "testnet" | "devnet" | "localnet";

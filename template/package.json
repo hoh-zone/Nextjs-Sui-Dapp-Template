@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@mysten/dapp-kit": "^0.14.27",
-    "@mysten/sui.js": "^0.54.1",
+    "@mysten/sui": "^1.13.0",
     "@tanstack/react-query": "^5.59.16",
     "next": "15.0.1",
     "react": "^18.3.1",

@@ -1,6 +1,6 @@
 {
   "name": "create-nextjs-sui-dapp-template",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A generator for Next.js Sui dApp projects",
   "main": "bin/generate.js",
   "type": "module",
