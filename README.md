@@ -1,5 +1,7 @@
 # create-nextjs-sui-dapp-template
 
+**English** | [中文](README_CN.md)
+
 A generator for Next.js Sui dApp projects. This tool helps you quickly set up a new Sui dApp project using Next.js.
 
 ## Installation
@@ -24,8 +26,8 @@ After creating your project, navigate to the project directory and install depen
 ```bash
 cd your-project-name
 npm install
-``` 
-higly recommend using bun.js to install dependencies.
+```
+higly recommend using `bun.js` to install dependencies.
 
 ```bash
 bun install
