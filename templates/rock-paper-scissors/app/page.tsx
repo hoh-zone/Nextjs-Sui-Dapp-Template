@@ -1,19 +1,35 @@
 'use client'
 
 import Image from 'next/image'
-import {ConnectButton} from "@mysten/dapp-kit";
+import {suiClient} from "@/config";
+import {ConnectButton, useSignAndExecuteTransaction} from "@mysten/dapp-kit";
 import {MouseEvent, useCallback, useEffect, useMemo, useRef, useState} from "react";
 import {sleep, next} from "@/utils"
+import play from "@/lib/contracts/play";
 
 export default function Home() {
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
+
+    const {mutateAsync: signAndExecuteTransaction} = useSignAndExecuteTransaction({
+        execute: async ({bytes, signature}) =>
+            await suiClient.executeTransactionBlock({
+                transactionBlock: bytes,
+                signature,
+                options: {
+                    showRawEffects: true,
+                    showEvents: true
+                },
+            })
+    });
 
     const playGame = () => {
         setIsPlaying(true);
     }
 
-    const clickChoose = (e: MouseEvent<HTMLImageElement>) => {
+    const clickChoose = async (e: MouseEvent<HTMLImageElement>) => {
         console.log(e.currentTarget.alt);
+        const chosen = await play(signAndExecuteTransaction);
+        console.log(chosen);
     }
 
     const [loopName, setLoopName] = useState<string>("rock");

@@ -364,13 +364,13 @@ module game::game {
     use sui::random::Random;
 
     public struct RandomEvent has copy, drop {
-        choosen: u8
+        chosen: u8
     }
 
     entry fun play(random: &Random, ctx: &mut TxContext) {
         let mut generator = random.new_generator(ctx);
         event::emit(RandomEvent {
-            choosen: generator.generate_u8_in_range(1, 3)
+            chosen: generator.generate_u8_in_range(1, 3)
         });
     }
 }
@@ -381,22 +381,22 @@ module game::game {
 通过命令行调用初步观察结果：
 
 ```bash
-export PACKAGE=0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d
+export PACKAGE=0x5780ec9a0ab44c86b957855eab35fa3e0dacb71d683109e40c50f94fca2f411b
 sui client call --package $PACKAGE --module game --function play --args 0x8
 # output:
 ╭─────────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ Transaction Block Events                                                                            │
 ├─────────────────────────────────────────────────────────────────────────────────────────────────────┤
 │  ┌──                                                                                                │
-│  │ EventID: 99Ydf218sfpkfJitBL1vKhWKVmw2tx6TDFxtQSDTPmCn:0                                          │
-│  │ PackageID: 0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d                    │
+│  │ EventID: o82egWHVDnqSABWre6tustng5zb6vDBfyQvPBtDGnQs:0                                           │
+│  │ PackageID: 0x5780ec9a0ab44c86b957855eab35fa3e0dacb71d683109e40c50f94fca2f411b                    │
 │  │ Transaction Module: game                                                                         │
 │  │ Sender: 0x9e4092b6a894e6b168aa1c6c009f5c1c1fcb83fb95e5aa39144e1d2be4ee0d67                       │
-│  │ EventType: 0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d::game::RandomEvent │
+│  │ EventType: 0x5780ec9a0ab44c86b957855eab35fa3e0dacb71d683109e40c50f94fca2f411b::game::RandomEvent │
 │  │ ParsedJSON:                                                                                      │
-│  │   ┌─────────┬───┐                                                                                │
-│  │   │ choosen │ 3 │                                                                                │
-│  │   └─────────┴───┘                                                                                │
+│  │   ┌────────┬───┐                                                                                 │
+│  │   │ chosen │ 3 │                                                                                 │
+│  │   └────────┴───┘                                                                                 │
 │  └──                                                                                                │
 ╰─────────────────────────────────────────────────────────────────────────────────────────────────────╯
 ```
@@ -404,13 +404,111 @@ sui client call --package $PACKAGE --module game --function play --args 0x8
 重复调用几次，发现触发的事件中的值确实是随机的，接着，我们对一些信息进行存储，打开`config`目录新建`key.ts`，用来存储发布后的ID，为了方便后续前端调用，我们可以把`Random`的地址、调用的完整函数名以及触发的`EventType`也存上并导出。
 
 ```ts
-export const PACKAGE = "0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d"
-// UPGRADE_CAP 本文不会用到，但是如果后续有升级合约的需求的话会用到
-export const UPGRADE_CAP = "0x80e8470d8415f3cf765b9a9388d7a0932d4068e008fb231fbf8d3e4dea09b731"
+// UPGRADE_CAP 本文不会用到，但是如果后续有升级合约的需求的话需要提供
+export const PACKAGE = "0x5780ec9a0ab44c86b957855eab35fa3e0dacb71d683109e40c50f94fca2f411b"
+export const UPGRADE_CAP = "0xb6222d0ab94ca5388b0722de9a4aab7ad10ff74bbe91a00d7c8fd1698d185c95"
 export const RANDOM = "0x8"
 export const FUNCTION = `${PACKAGE}::game::play`
 export const EVENT = `${PACKAGE}::game::RandomEvent`
 ```
 
 ## 前端与合约交互
+
+根据 Sui dApp 教学文档，我们在`page.tsx`中添加以下代码：
+
+```tsx
+const {mutateAsync: signAndExecuteTransaction} = useSignAndExecuteTransaction({
+    execute: async ({bytes, signature}) =>
+        await suiClient.executeTransactionBlock({
+            transactionBlock: bytes,
+            signature,
+            options: {
+                showRawEffects: true,
+                showEvents: true
+            },
+        })
+});
+```
+
+通过这段代码我们将得到一个`async`的函数`signAndExecuteTransaction`，这将是我们唤起钱包签署交易的入口；<br>根据`useSignAndExecuteTransaction`内部的定义，在链上交易成功后会返回带有`events`的信息，我们所需要的随机数就在里面。<br>如果对返回值不关心，甚至可以直接`const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();`来获取入口。
+
+假设我们已经实现了一个名为`play`的函数，它接受一个参数，就是上面的这个交易入口，我们将在我方游戏区域点击事件中触发：
+
+```tsx
+const clickChoose = async (e: MouseEvent<HTMLImageElement>) => {
+    console.log(e.currentTarget.alt);
+    const chosen = await play(signAndExecuteTransaction);
+    console.log(chosen);
+}
+```
+
+`play`函数我们放在`lib/contracts`目录下，搭好最基本的函数框架：
+
+```ts
+export default async function play(signAndExecuteTransaction) {
+}
+```
+
+首先需要为这个参数指定类型，回到`page.tsx`将鼠标悬停在这个定义好的交易入口上，发现它的类型是：<br>`UseMutateAsyncFunction<SuiTransactionBlockResponse, UseSignAndExecuteTransactionError, UseSignAndExecuteTransactionArgs, unknown>`<br>于是：
+
+```ts
+export default async function play(signAndExecuteTransaction: UseMutateAsyncFunction<SuiTransactionBlockResponse, UseSignAndExecuteTransactionError, UseSignAndExecuteTransactionArgs, unknown>) {
+}
+```
+
+显然，全是报错，因为很多该导入的没有导入。当然可以在当前文件导入，但如果不止有这一个交易，就需要在各个文件重新做一遍类似的操作，为了更便于管理，我们在`lib/contracts`下新建一个`type.ts`，专门用来放交易过程中可能用到的（通用）东西。<br>（可能会报错包不存在，通过`pnpm add -D <name>`或者等价的命令将其添加）
+
+```ts
+import {UseMutateFunction, UseMutateAsyncFunction} from "@tanstack/react-query";
+import {SuiTransactionBlockResponse} from "@mysten/sui/client";
+import type { SuiSignAndExecuteTransactionInput } from '@mysten/wallet-standard';
+import { PartialBy } from "@mysten/dapp-kit/dist/cjs/types/utilityTypes";
+import { WalletFeatureNotSupportedError, WalletNoAccountSelectedError, WalletNotConnectedError } from "@mysten/dapp-kit/dist/cjs/errors/walletErrors";
+import {Transaction} from "@mysten/sui/transactions";
+
+type UseSignAndExecuteTransactionError = WalletFeatureNotSupportedError | WalletNoAccountSelectedError | WalletNotConnectedError | Error;
+type UseSignAndExecuteTransactionArgs = PartialBy<Omit<SuiSignAndExecuteTransactionInput, 'transaction'>, 'account' | 'chain'> & {
+    transaction: Transaction | string;
+};
+
+export type {
+    UseMutateFunction,
+    UseMutateAsyncFunction,
+    SuiTransactionBlockResponse,
+    UseSignAndExecuteTransactionError,
+    UseSignAndExecuteTransactionArgs,
+
+}
+```
+
+将上面导出的东西，导入`play.ts`，剩下要做的就是实现这个函数。同样的，根据Sui dApp教学，依葫芦画瓢：
+
+```ts
+const tx = new Transaction();
+tx.moveCall({
+    target: FUNCTION,
+    arguments: [
+        tx.object(RANDOM)
+    ],
+});
+const response = await signAndExecuteTransaction({transaction: tx});
+```
+
+我们新建了一个交易，内容是调用`FUNCTION`（我们事先在`config/key.ts`中定义好了），调用的这个链上函数有一个参数，是一个`Random`对象，通过`tx.object(<Object Address>)`来将随机数的对象地址`0x8`转化为对象。<br>在唤起钱包签署交易的入口里传入这一笔交易，返回的内容存储在`response`中。<br>接下来，只需要在其中找到（对应的）`EVENT`，再将其中存储的`chosen`返回即可：
+
+```ts
+let chosen = 0;
+response.events?.forEach(event => {
+    if (event.type === EVENT) {
+        chosen = (event.parsedJson as ParsedJson).chosen;
+    }
+});
+return chosen;
+```
+
+将项目跑起来，测试是否如我所想的那样执行：
+
+![call.gif](./notes/call.gif)
+
+## 输赢结算
 

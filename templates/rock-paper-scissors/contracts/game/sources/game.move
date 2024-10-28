@@ -3,13 +3,13 @@ module game::game {
     use sui::random::Random;
 
     public struct RandomEvent has copy, drop {
-        choosen: u8
+        chosen: u8
     }
 
     entry fun play(random: &Random, ctx: &mut TxContext) {
         let mut generator = random.new_generator(ctx);
         event::emit(RandomEvent {
-            choosen: generator.generate_u8_in_range(1, 3)
+            chosen: generator.generate_u8_in_range(1, 3)
         });
     }
 }
