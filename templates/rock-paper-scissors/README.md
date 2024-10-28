@@ -1,5 +1,20 @@
 # rock-paper-scissors
 
+## 写在前面
+
+### 本地
+
+```bash
+# 或其它等价的命令来安装依赖并将项目跑起来
+pnpm install
+pnpm run dev
+# http://localhost:3000/
+```
+
+### 在线（如果没过期的话）
+
+https://rock-paper-scissors.walrus.site/
+
 ## 前端（样式布局）
 
 ### 初始化
@@ -512,3 +527,56 @@ return chosen;
 
 ## 输赢结算
 
+首先，在`lib`目录下新建一个`games`目录，里面建一个`checkIsWinner.ts`用来编写判断输赢的函数。
+
+合约随机出的1~3分别表示石头、剪刀、布，我们将前端的选择，也就是`e.currentTarget.alt`按照同样的规则转化成数字，从中不难发现一个规律：<br>石头`1` > 剪刀`2` > 布`3`，当我们的选择和链上的随机数的差的绝对值小于等于1的时候，数字小的那一方获胜，否则，将两个数都对3取余数后再执行同样的判断，也就是布`3 % 3 = 0` > 石头`1 % 3 = 1` > 剪刀`2 % 3 = 2`。<br>可以证明，这个取余数的过程最多进行一次就必定会判成胜负，于是，编码如下：
+
+```ts
+function strToNumber(str: string) {
+    if (str === "rock")
+        return 1;
+    if (str === "scissors")
+        return 2;
+    return 3;
+}
+
+function check(my: number, move: number) {
+    if (Math.abs(my - move) > 1)
+        return check(my % 3, move % 3);
+    return my < move;
+}
+
+export default function checkIsWinner(my_choice: string, move_choice: number) {
+    return check(strToNumber(my_choice), move_choice);
+}
+```
+
+合约交易成功后，在`page.tsx`中调用该函数。为了让胜负结算标签受该值控制，我们需要用`useState`来新建一个变量，同时为该标签绑定一个重开功能的点击事件，重开功能很容易实现，只需要将控制状态的值设为初始值即可：
+
+```tsx
+const [isWinner, setIsWinner] = useState<boolean | null>(null);
+const clickChoose = async (e: MouseEvent<HTMLImageElement>) => {
+    const my_chosen = e.currentTarget.alt;
+    const chosen = await play(signAndExecuteTransaction);
+    setIsWinner(checkIsWinner(my_chosen, chosen));
+}
+
+const gameAgain = () => {
+    setIsWinner(null);
+    setIsPlaying(false);
+}
+
+{
+    isWinner !== null
+    &&
+    <div
+        className="absolute w-full top-1/2 -translate-y-1/2 cursor-pointer animate-bounce text-center"
+        onClick={gameAgain}>
+        {isWinner ? "Congratulations, you’ve got it all!" : "No! Everyone believes you will win next time!"}
+    </div>
+}
+```
+
+![game.gif](./notes/game.gif)
+
+至此，大体功能已全部实现，当然，这是在没有任何误操作（比如未连接钱包开始游戏等）的前提下，同时，最后那只不断闪动的手也应该有一个最终归宿。不过这剩下的大多都是优化或者美化的环节，这里就不再详细阐述。你也可以根据自己的喜好将这一段留白增添一份天马行空的创意。
