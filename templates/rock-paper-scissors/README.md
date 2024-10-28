@@ -347,3 +347,70 @@ export default function Home() {
 
 前端页面布局暂告一段落，从这里开始将用`Move`编写一个简单的石头剪刀布的智能合约。
 
+来到`contracts`目录，通过`sui move new game`命令新建合约代码。删除`tests`目录，里面用来编写测试代码，我们暂时用不上。打开`sources/game.move`准备编写合约。
+
+我们想要达成的效果很简单，就是当玩家选择好自己是石头、剪刀还是布之后，通过链上随机的方式得到对方出什么。
+
+于是，我们就需要编写以下内容：
+
+- 通过触发事件的方式来得到随机结果。
+- 随机函数。
+
+最终，`move`代码如下：
+
+```move
+module game::game {
+    use sui::event;
+    use sui::random::Random;
+
+    public struct RandomEvent has copy, drop {
+        choosen: u8
+    }
+
+    entry fun play(random: &Random, ctx: &mut TxContext) {
+        let mut generator = random.new_generator(ctx);
+        event::emit(RandomEvent {
+            choosen: generator.generate_u8_in_range(1, 3)
+        });
+    }
+}
+```
+
+随机得到1~3中的数，由前端处理其对应到石头、剪刀和布，`sui move build`没问题，`sui client publish`发布，成功后得到一串信息。
+
+通过命令行调用初步观察结果：
+
+```bash
+export PACKAGE=0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d
+sui client call --package $PACKAGE --module game --function play --args 0x8
+# output:
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Transaction Block Events                                                                            │
+├─────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌──                                                                                                │
+│  │ EventID: 99Ydf218sfpkfJitBL1vKhWKVmw2tx6TDFxtQSDTPmCn:0                                          │
+│  │ PackageID: 0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d                    │
+│  │ Transaction Module: game                                                                         │
+│  │ Sender: 0x9e4092b6a894e6b168aa1c6c009f5c1c1fcb83fb95e5aa39144e1d2be4ee0d67                       │
+│  │ EventType: 0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d::game::RandomEvent │
+│  │ ParsedJSON:                                                                                      │
+│  │   ┌─────────┬───┐                                                                                │
+│  │   │ choosen │ 3 │                                                                                │
+│  │   └─────────┴───┘                                                                                │
+│  └──                                                                                                │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+重复调用几次，发现触发的事件中的值确实是随机的，接着，我们对一些信息进行存储，打开`config`目录新建`key.ts`，用来存储发布后的ID，为了方便后续前端调用，我们可以把`Random`的地址、调用的完整函数名以及触发的`EventType`也存上并导出。
+
+```ts
+export const PACKAGE = "0x1c1b8dbf105581feb3eb08553952840a247de29164a7f78f9194006796e6488d"
+// UPGRADE_CAP 本文不会用到，但是如果后续有升级合约的需求的话会用到
+export const UPGRADE_CAP = "0x80e8470d8415f3cf765b9a9388d7a0932d4068e008fb231fbf8d3e4dea09b731"
+export const RANDOM = "0x8"
+export const FUNCTION = `${PACKAGE}::game::play`
+export const EVENT = `${PACKAGE}::game::RandomEvent`
+```
+
+## 前端与合约交互
+
