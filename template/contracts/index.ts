@@ -1,6 +1,6 @@
-import { isValidSuiAddress } from "@mysten/sui.js/utils";
+import { isValidSuiAddress } from "@mysten/sui/utils";
 import { suiClient } from "@/config";
-import { SuiObjectResponse } from "@mysten/sui.js/client";
+import { SuiObjectResponse } from "@mysten/sui/client";
 import { categorizeSuiObjects, CategorizedObjects } from "@/utils/assetsHelpers";
 
 export const getUserProfile = async (address: string): Promise<CategorizedObjects> => {
