@@ -1,7 +1,7 @@
 'use client'
 import { ConnectButton } from '@mysten/dapp-kit'
 import Image from 'next/image'
-import { getUserProfile } from '@/lib/contracts'
+import { getUserProfile } from '@/contracts/query'
 import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useEffect, useState } from 'react'
 import { CategorizedObjects, calculateTotalBalance, formatBalance } from '@/utils/assetsHelpers'
