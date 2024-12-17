@@ -1,30 +1,39 @@
-import { isValidSuiAddress } from "@mysten/sui/utils";
-import { suiClient } from "@/config";
-import { SuiObjectResponse } from "@mysten/sui/client";
-import { categorizeSuiObjects, CategorizedObjects } from "@/utils/assetsHelpers";
 
-export const getUserProfile = async (address: string): Promise<CategorizedObjects> => {
-  if (!isValidSuiAddress(address)) {
-    throw new Error("Invalid Sui address");
-  }
+import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
+import { createNetworkConfig } from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import { MainnetContract, TestnetContract } from "./config";
 
-  let hasNextPage = true;
-  let nextCursor: string | null = null;
-  let allObjects: SuiObjectResponse[] = [];
+type NetworkVariables = ReturnType<typeof useNetworkVariables>;
 
-  while (hasNextPage) {
-    const response = await suiClient.getOwnedObjects({
-      owner: address,
-      options: {
-        showContent: true,
-      },
-      cursor: nextCursor,
-    });
+function createBetterTxFactory<T extends unknown[]>(
+    fn: (tx: Transaction, networkVariables: NetworkVariables, ...args: T) => void
+) {
+    return (networkVariables: NetworkVariables, ...args: T) => {
+        const tx = new Transaction();
+        fn(tx, networkVariables, ...args);
+        return tx;
+    };
+}
 
-    allObjects = allObjects.concat(response.data);
-    hasNextPage = response.hasNextPage;
-    nextCursor = response.nextCursor ?? null;
-  }
+type Network = "mainnet" | "testnet"
 
-  return categorizeSuiObjects(allObjects);
-};
+const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
+
+const { networkConfig, useNetworkVariable, useNetworkVariables } = createNetworkConfig({
+    testnet: {
+        url: getFullnodeUrl("testnet"),
+        variables: TestnetContract,
+    },
+    mainnet: {
+        url: getFullnodeUrl("mainnet"),
+        variables: MainnetContract,
+    }
+});
+
+// 创建全局 SuiClient 实例
+const suiClient = new SuiClient({ url: networkConfig[network].url });
+
+export { useNetworkVariable, useNetworkVariables, networkConfig, network, suiClient, createBetterTxFactory };
+export type { NetworkVariables };
+
