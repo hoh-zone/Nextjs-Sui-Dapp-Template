@@ -15,7 +15,7 @@ npx create-nextjs-sui-dapp-template
 Follow the prompts to set up your project:
 
 1. Enter your project name
-2. Choose the Sui network you want to use (testnet, mainnet, devnet, or localnet)，you can change the network later in the `.env` file
+2. Choose the Sui network you want to use (testnet, mainnet)，you can change the network later in the `.env` file
 
 The tool will create a new directory with your project name, set up the initial project structure, and configure it based on your choices.
 
