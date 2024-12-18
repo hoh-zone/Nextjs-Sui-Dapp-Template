@@ -6,13 +6,13 @@ import { MainnetContract, TestnetContract } from "./config";
 
 type NetworkVariables = ReturnType<typeof useNetworkVariables>;
 
-function createBetterTxFactory<T extends unknown[]>(
-    fn: (tx: Transaction, networkVariables: NetworkVariables, ...args: T) => void
+function createBetterTxFactory<T extends Record<string, unknown>>(
+    fn: (tx: Transaction, networkVariables: NetworkVariables, params:T) => Transaction
 ) {
-    return (networkVariables: NetworkVariables, ...args: T) => {
+    return (params:T) => {
         const tx = new Transaction();
-        fn(tx, networkVariables, ...args);
-        return tx;
+        const networkVariables = useNetworkVariables();
+        return fn(tx, networkVariables, params);
     };
 }
 
