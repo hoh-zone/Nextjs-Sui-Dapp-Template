@@ -7,6 +7,12 @@
   "bin": {
     "create-nextjs-sui-dapp-template": "./bin/generate.js"
   },
+  "files": [
+    "template",
+    "bin",
+    "README.md",
+    "README_CN.md"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Wulabalabo/Nextjs-Sui-Dapp-Template"
