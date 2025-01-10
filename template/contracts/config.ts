@@ -1,12 +1,5 @@
+import { testnet } from './contracts_testnet';
 
-type BaseContract = {
-    packageId: string;
-}
+export const TestnetContract = testnet;
 
-export const TestnetContract: BaseContract = {
-    packageId: "0x2",
-}
-
-export const MainnetContract: BaseContract = {
-    packageId: "0x2",
-}
+export const MainnetContract = testnet;
