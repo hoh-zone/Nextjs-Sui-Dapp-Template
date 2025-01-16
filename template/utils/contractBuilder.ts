@@ -89,7 +89,8 @@ async function buildAndPublishPackage(env: Env = 'testnet',basepath: string = '.
 
         const fileContent = `
         import { BaseContract } from "./contracts_base";\n
-        export const ${env}: BaseContract = ${Object.keys(objects).map(key => `${key}: "${objects[key]}",`).join('\n  ')}`;
+        export const ${env}: BaseContract = {${Object.keys(objects).map(key => `${key}: "${objects[key]}",`).join('\n  ')}};
+        `;
         const baseContent = `export interface BaseContract {
             ${Object.keys(objects)
               .map(key => `${key}: string;`)

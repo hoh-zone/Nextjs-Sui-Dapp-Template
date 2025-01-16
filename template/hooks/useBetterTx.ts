@@ -12,6 +12,7 @@ export type BetterSignAndExecuteTransactionProps<TArgs extends unknown[] = unkno
 }
 
 interface TransactionChain {
+    beforeExecute: (callback: () => Promise<void>) => TransactionChain
     onSuccess: (callback: (result: SuiSignAndExecuteTransactionOutput) => Promise<void>) => TransactionChain
     onError: (callback: (error: Error) => void) => TransactionChain
     onSettled: (callback: (result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) => TransactionChain
@@ -27,7 +28,12 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
         let successCallback: ((result: SuiSignAndExecuteTransactionOutput) => Promise<void>) | undefined
         let errorCallback: ((error: Error) => void) | undefined
         let settledCallback: ((result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) | undefined
+        let beforeExecuteCallback: (() => Promise<void>) | undefined
         const chain: TransactionChain = {
+            beforeExecute: (callback) => {
+                beforeExecuteCallback = callback
+                return chain
+            },
             onSuccess: (callback) => {
                 successCallback = callback
                 return chain
@@ -41,8 +47,11 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
                 return chain
             },
             execute: async () => {
-                setIsLoading(true)
-                await signAndExecuteTransaction({ transaction: tx }, {
+                try {
+                    if(isLoading) return;
+                    setIsLoading(true)
+                    await beforeExecuteCallback?.()
+                    await signAndExecuteTransaction({ transaction: tx }, {
                     onSuccess: async (result) => {
                         if (props.waitForTx !== false) {
                             await suiClient.waitForTransaction({ digest: result.digest })
@@ -54,9 +63,13 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
                     },
                     onSettled: async (result) => {                       
                         await settledCallback?.(result)
-                        setIsLoading(false)
-                    }
-                })
+                            setIsLoading(false)
+                        }
+                    })
+                } catch (error) {
+                    errorCallback?.(error as Error)
+                    setIsLoading(false)
+                }
             }
         }
 

@@ -1,7 +1,7 @@
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { createNetworkConfig } from "@mysten/dapp-kit";
 import { Transaction } from "@mysten/sui/transactions";
-import { MainnetContract, TestnetContract } from "./config";
+import { getContractConfig } from "./config";
 
 type NetworkVariables = ReturnType<typeof useNetworkVariables>;
 
@@ -26,11 +26,11 @@ const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
 const { networkConfig, useNetworkVariables } = createNetworkConfig({
     testnet: {
         url: getFullnodeUrl("testnet"),
-        variables: TestnetContract,
+        variables: getContractConfig("testnet"),
     },
     mainnet: {
-        url: getFullnodeUrl("mainnet"),
-        variables: MainnetContract,
+        url: getFullnodeUrl("mainnet"), 
+        variables: getContractConfig("mainnet"),
     }
 });
 
