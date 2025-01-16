@@ -16,10 +16,13 @@ export function getContractConfig(network: 'testnet' | 'mainnet'): ContractConfi
                 const testnetModule = require('./contracts_testnet')
                 return testnetModule.testnet as unknown as ContractConfig
             } catch (testnetError) {
-                throw new Error('Failed to load both mainnet and testnet configs', { cause: testnetError })
+                // Return empty object if both configs fail to load
+                console.error('Failed to load both mainnet and testnet configs', { cause: testnetError })
+                return {}
             }
         }
-        // If testnet config fails, throw error
-        throw new Error('Failed to load testnet config', { cause: error })
+        // Return empty object if testnet config fails to load
+        console.error('Failed to load testnet config', { cause: error })
+        return {}
     }
 }
