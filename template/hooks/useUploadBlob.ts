@@ -14,10 +14,14 @@ export interface UploadBlobConfig {
     proxyUrl?: string;
 }
 
+if(!process.env.NEXT_PUBLIC_PUBLISHER_URL || !process.env.NEXT_PUBLIC_AGGREGATOR_URL){
+    throw new Error('Missing environment variables');
+}
+
 const DEFAULT_CONFIG: Required<UploadBlobConfig> = {
     initialEpochs: process.env.NEXT_PUBLIC_INITIAL_EPOCHS || '1',
-    initialPublisherUrl: process.env.NEXT_PUBLIC_PUBLISHER_URL || 'https://publisher-devnet.walrus.space',
-    initialAggregatorUrl: process.env.NEXT_PUBLIC_AGGREGATOR_URL || 'https://aggregator-devnet.walrus.space',
+    initialPublisherUrl: process.env.NEXT_PUBLIC_PUBLISHER_URL ,
+    initialAggregatorUrl: process.env.NEXT_PUBLIC_AGGREGATOR_URL ,
     proxyUrl: process.env.NEXT_PUBLIC_PROXY_URL || ''
 };
 

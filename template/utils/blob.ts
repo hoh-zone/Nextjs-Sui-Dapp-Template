@@ -1,4 +1,3 @@
-import { SuiClient } from "@mysten/sui/client";
 import { toHex,isValidSuiObjectId } from "@mysten/sui/utils";
 import baseX from "base-x";
 
@@ -29,11 +28,3 @@ export function getSubdomainAndPath(scope: string): Path | null {
     }
     return null;
 }
-
-export async function getBlob(objectId: string) {
-    const client = new SuiClient({ url: "https://fullnode.testnet.sui.io:443" });
-    return await client.getObject({
-        id: objectId,
-        options: { showContent: true },
-    });
-} 
