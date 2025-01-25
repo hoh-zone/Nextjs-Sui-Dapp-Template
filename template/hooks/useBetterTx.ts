@@ -2,7 +2,7 @@
 
 import { Transaction } from '@mysten/sui/transactions'
 import { useSignAndExecuteTransaction } from '@mysten/dapp-kit'
-import { SuiSignAndExecuteTransactionOutput } from '@mysten/wallet-standard'
+import {SuiSignAndExecuteTransactionBlockOutput} from '@mysten/wallet-standard'
 import { useState } from 'react'
 import { suiClient } from '@/contracts'
 
@@ -13,21 +13,34 @@ export type BetterSignAndExecuteTransactionProps<TArgs extends unknown[] = unkno
 
 interface TransactionChain {
     beforeExecute: (callback: () => Promise<void>) => TransactionChain
-    onSuccess: (callback: (result: SuiSignAndExecuteTransactionOutput) => Promise<void>) => TransactionChain
+    onSuccess: (callback: (result: SuiSignAndExecuteTransactionBlockOutput) => Promise<void>) => TransactionChain
     onError: (callback: (error: Error) => void) => TransactionChain
-    onSettled: (callback: (result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) => TransactionChain
+    onSettled: (callback: (result: SuiSignAndExecuteTransactionBlockOutput | undefined) => void | Promise<void>) => TransactionChain
     execute: () => Promise<void>
 }
 
 export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unknown[]>(props: BetterSignAndExecuteTransactionProps<TArgs>) {
-    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+        execute: async ({ bytes, signature }) => {
+            return await suiClient.executeTransactionBlock({
+                transactionBlock: bytes,
+                signature,
+                options: {
+                    // Raw effects are required so the effects can be reported back to the wallet
+                    showRawEffects: true,
+                    // Select additional data to return
+                    showEvents: true
+                }
+            })
+        }
+    })
     const [isLoading, setIsLoading] = useState(false)
 
     const handleSignAndExecuteTransaction = (...args: TArgs): TransactionChain => {
         const tx = props.tx(...args)
-        let successCallback: ((result: SuiSignAndExecuteTransactionOutput) => Promise<void>) | undefined
+        let successCallback: ((result: SuiSignAndExecuteTransactionBlockOutput) => Promise<void>) | undefined
         let errorCallback: ((error: Error) => void) | undefined
-        let settledCallback: ((result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) | undefined
+        let settledCallback: ((result: SuiSignAndExecuteTransactionBlockOutput | undefined) => void | Promise<void>) | undefined
         let beforeExecuteCallback: (() => Promise<void>) | undefined
         const chain: TransactionChain = {
             beforeExecute: (callback) => {
@@ -51,7 +64,7 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
                     if(isLoading) return;
                     setIsLoading(true)
                     await beforeExecuteCallback?.()
-                    await signAndExecuteTransaction({ transaction: tx }, {
+                    signAndExecuteTransaction({ transaction: tx }, {
                     onSuccess: async (result) => {
                         if (props.waitForTx !== false) {
                             await suiClient.waitForTransaction({ digest: result.digest })
