@@ -1,28 +1,18 @@
-interface ContractConfig {
-    [key: string]: string
+interface ContractAddresses {
+    [key: string]: string;
 }
 
-export function getContractConfig(network: 'testnet' | 'mainnet'): ContractConfig {
-    try {
-        // Try to load requested network config first
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const contractModule = require(`./contracts_${network}`)
-        return contractModule[network]
-    } catch (error) {
-        // If mainnet config fails, try testnet as fallback
-        if (network === 'mainnet') {
-            try {
-                // eslint-disable-next-line @typescript-eslint/no-require-imports
-                const testnetModule = require('./contracts_testnet')
-                return testnetModule.testnet as unknown as ContractConfig
-            } catch (testnetError) {
-                // Return empty object if both configs fail to load
-                console.error('Failed to load both mainnet and testnet configs', { cause: testnetError })
-                return {}
-            }
-        }
-        // Return empty object if testnet config fails to load
-        console.error('Failed to load testnet config', { cause: error })
-        return {}
+type NetworkType = 'testnet' | 'mainnet';
+
+const configs = {
+    testnet: {
+        Package: "0x0000000000000000000000000000000000000000",
+    },
+    mainnet: {
+        Package: "0x1111111111111111111111111111111111111111",
     }
+} as const satisfies Record<NetworkType, ContractAddresses>;
+
+export function getContractConfig(network: NetworkType): ContractAddresses {
+    return configs[network];
 }
