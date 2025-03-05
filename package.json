@@ -1,6 +1,6 @@
 {
   "name": "create-nextjs-sui-dapp-template",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "A generator for Next.js Sui dApp projects",
   "main": "bin/generate.js",
   "type": "module",
@@ -29,8 +29,8 @@
   "author": "Mindfrog",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^5.0.1",
+    "chalk": "^5.4.1",
     "fs-extra": "^10.1.0",
-    "inquirer": "^8.2.4"
+    "inquirer": "^8.2.6"
   }
 }
