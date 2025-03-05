@@ -1,11 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { enokiClient, isEnokiEnabled } from "../EnokiClient";
 import { z } from "zod";
+import { isValidSuiAddress } from "@mysten/sui/utils";
 
 const sponsorTxSchema = z.object({
   network: z.enum(["mainnet", "testnet"]),
   txBytes: z.string().min(1, "Transaction bytes cannot be empty"),
-  sender: z.string().min(1, "Sender address cannot be empty"),
+  sender: z.string().refine((val) => {
+    return isValidSuiAddress(val)
+  }, {
+    message: "Invalid sender address"
+  }),
   allowedAddresses: z.array(z.string()).optional(),
 }).strict();
 
