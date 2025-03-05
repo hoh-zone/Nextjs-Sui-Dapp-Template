@@ -1,43 +1,56 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 'use client'
 
 import { Transaction } from '@mysten/sui/transactions'
 import { useSignAndExecuteTransaction, useSignTransaction } from '@mysten/dapp-kit'
-import { type SuiSignAndExecuteTransactionOutput } from '@mysten/wallet-standard'
 import { useState } from 'react'
-import { suiClient } from '@/contracts/index'
-import type { CreateSponsoredTransactionApiResponse, SponsorTxRequestBody } from '@/types/sponsorTx'
+import { suiClient } from '@/contracts'
+import { CreateSponsoredTransactionApiResponse, SponsorTxRequestBody } from '@/types/sponsorTx'
 import { fromBase64, toBase64 } from '@mysten/sui/utils'
-import axios from 'axios'
-
-
+import { SuiTransactionBlockResponse, SuiTransactionBlockResponseOptions } from '@mysten/sui/client'
 export type BetterSignAndExecuteTransactionProps<TArgs extends unknown[] = unknown[]> = {
     tx: (...args: TArgs) => Transaction
+    options?:SuiTransactionBlockResponseOptions
     waitForTx?: boolean
-}
+}   
 
 export type BetterSignAndExecuteTransactionWithSponsorProps<TArgs extends unknown[] = unknown[]> = {
     tx: (...args: TArgs) => Transaction
 }
 
 interface TransactionChain {
-    onSuccess: (callback: (result: SuiSignAndExecuteTransactionOutput | CreateSponsoredTransactionApiResponse | undefined) => void | Promise<void>) => TransactionChain
+    beforeExecute: (callback: () => Promise<boolean | void>) => TransactionChain
+    onSuccess: (callback: (result: SuiTransactionBlockResponse | CreateSponsoredTransactionApiResponse | undefined) => void | Promise<void>) => TransactionChain
     onError: (callback: (error: Error) => void) => TransactionChain
-    onSettled: (callback: (result: SuiSignAndExecuteTransactionOutput | CreateSponsoredTransactionApiResponse | undefined) => void | Promise<void>) => TransactionChain
+    onSettled: (callback: (result: SuiTransactionBlockResponse | CreateSponsoredTransactionApiResponse | undefined) => void | Promise<void>) => TransactionChain
     execute: () => Promise<void | CreateSponsoredTransactionApiResponse>
 }
 
-export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unknown[]>({ tx, waitForTx = true }: BetterSignAndExecuteTransactionProps<TArgs>) {
-    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction()
+export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unknown[]>({ tx, waitForTx = true, options }: BetterSignAndExecuteTransactionProps<TArgs>) {
+    const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
+		execute: async ({ bytes, signature }) =>
+			await suiClient.executeTransactionBlock({
+				transactionBlock: bytes,
+				signature,
+				options:{
+                    showRawEffects: true,
+                    ...options
+                }
+			}),
+	});
     const [isLoading, setIsLoading] = useState(false)
 
     const handleSignAndExecuteTransaction = (...args: TArgs): TransactionChain => {
         const txInput = tx(...args)
-        let successCallback: ((result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) | undefined
+        let successCallback: ((result: SuiTransactionBlockResponse | undefined) => void | Promise<void>) | undefined
         let errorCallback: ((error: Error) => void) | undefined
-        let settledCallback: ((result: SuiSignAndExecuteTransactionOutput | undefined) => void | Promise<void>) | undefined
+        let settledCallback: ((result:  SuiTransactionBlockResponse | undefined) => void | Promise<void>) | undefined
+        let beforeExecuteCallback: (() => Promise<boolean | void>) | undefined
 
         const chain: TransactionChain = {
+            beforeExecute: (callback) => {
+                beforeExecuteCallback = callback
+                return chain
+            },
             onSuccess: (callback) => {
                 successCallback = callback
                 return chain
@@ -52,21 +65,32 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
             },
             execute: async () => {
                 setIsLoading(true)
-                signAndExecuteTransaction({ transaction: txInput }, {
-                    onSuccess: async (result) => {
-                        if (waitForTx) {
-                            await suiClient.waitForTransaction({ digest: result.digest })
-                        }
-                        await successCallback?.(result)
-                    },
-                    onError: (error) => {
-                        errorCallback?.(error)
-                    },
-                    onSettled: async (result) => {
-                        await settledCallback?.(result)
-                        setIsLoading(false)
+                try {
+                    const validationResult = await beforeExecuteCallback?.()
+                    if (validationResult === false) {
+                        throw new Error('Validation failed in beforeExecute')
                     }
-                })
+                    await signAndExecuteTransaction({ transaction: txInput }, {
+                        onSuccess: async (result) => {
+                            if (waitForTx) {
+                                await suiClient.waitForTransaction({ digest: result.digest })
+                            }
+                            await successCallback?.(result)
+                        },
+                        onError: (error) => {
+                            errorCallback?.(error)
+                        },
+                        onSettled: async (result) => {
+                            await settledCallback?.(result)
+                            setIsLoading(false)
+                        }
+                    })
+                } catch (error) {
+                    const typedError = error instanceof Error ? error : new Error(String(error))
+                    errorCallback?.(typedError)
+                } finally {
+                    setIsLoading(false)
+                }
             }
         }
 
@@ -89,8 +113,13 @@ export function useBetterSignAndExecuteTransactionWithSponsor<TArgs extends unkn
         let successCallback: ((result: CreateSponsoredTransactionApiResponse) => void | Promise<void>) | undefined
         let errorCallback: ((error: Error) => void) | undefined
         let settledCallback: ((result: CreateSponsoredTransactionApiResponse | undefined) => void | Promise<void>) | undefined
+        let beforeExecuteCallback: (() => Promise<boolean | void>) | undefined
 
         const chain: TransactionChain = {
+            beforeExecute: (callback) => {
+                beforeExecuteCallback = callback
+                return chain
+            },  
             onSuccess: (callback) => {
                 successCallback = callback
                 return chain
@@ -106,12 +135,16 @@ export function useBetterSignAndExecuteTransactionWithSponsor<TArgs extends unkn
             execute: async () => {
                 setIsLoading(true)
                 try {
+                    const validationResult = await beforeExecuteCallback?.()
+                    if (validationResult === false) {
+                        throw new Error('Validation failed in beforeExecute')
+                    }
                     const txInput = props.tx(...args)
                     const txBytesPromise = await txInput.build({
                         client: suiClient,
                         onlyTransactionKind: true,
                     })
-                    const txBytes = toBase64(txBytesPromise)
+                    const txBytes = await toBase64(txBytesPromise)
 
                     const sponsorTxBody: SponsorTxRequestBody = {
                         network,
@@ -120,7 +153,10 @@ export function useBetterSignAndExecuteTransactionWithSponsor<TArgs extends unkn
                         allowedAddresses,
                     }
 
-                    const { data: sponsorResponse } = await axios.post<CreateSponsoredTransactionApiResponse>("/api/sponsored", sponsorTxBody)
+                    const sponsorResponse = await fetch("/api/sponsored", {
+                        method: "POST",
+                        body: JSON.stringify(sponsorTxBody),
+                    }).then(res => res.json()) as CreateSponsoredTransactionApiResponse
 
                     const { bytes, digest: sponsorDigest } = sponsorResponse
 
@@ -134,7 +170,10 @@ export function useBetterSignAndExecuteTransactionWithSponsor<TArgs extends unkn
                         signature,
                     }
 
-                    const { data: executeSponsoredTxResponse } = await axios.post<CreateSponsoredTransactionApiResponse>("/api/execute", executeSponsoredTxBody)
+                    const executeSponsoredTxResponse = await fetch("/api/execute", {
+                        method: "POST",
+                        body: JSON.stringify(executeSponsoredTxBody),
+                    }).then(res => res.json()) as CreateSponsoredTransactionApiResponse
 
                     await successCallback?.(executeSponsoredTxResponse)
                     await settledCallback?.(executeSponsoredTxResponse)
