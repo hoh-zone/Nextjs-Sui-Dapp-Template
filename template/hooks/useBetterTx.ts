@@ -10,7 +10,7 @@ import { SuiTransactionBlockResponse, SuiTransactionBlockResponseOptions } from 
 export type BetterSignAndExecuteTransactionProps<TArgs extends unknown[] = unknown[]> = {
     tx: (...args: TArgs) => Transaction
     options?:SuiTransactionBlockResponseOptions
-    waitForTx?: boolean
+    waitForTransaction?: boolean
 }   
 
 export type BetterSignAndExecuteTransactionWithSponsorProps<TArgs extends unknown[] = unknown[]> = {
@@ -25,14 +25,14 @@ interface TransactionChain {
     execute: () => Promise<void | CreateSponsoredTransactionApiResponse>
 }
 
-export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unknown[]>({ tx, waitForTx = true, options }: BetterSignAndExecuteTransactionProps<TArgs>) {
+export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unknown[]>({ tx, waitForTransaction = true, options }: BetterSignAndExecuteTransactionProps<TArgs>) {
     const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction({
 		execute: async ({ bytes, signature }) =>
 			await suiClient.executeTransactionBlock({
 				transactionBlock: bytes,
 				signature,
 				options:{
-                    showRawEffects: true,
+                    showEffects: true,
                     ...options
                 }
 			}),
@@ -72,7 +72,7 @@ export function useBetterSignAndExecuteTransaction<TArgs extends unknown[] = unk
                     }
                     await signAndExecuteTransaction({ transaction: txInput }, {
                         onSuccess: async (result) => {
-                            if (waitForTx) {
+                            if (waitForTransaction) {
                                 await suiClient.waitForTransaction({ digest: result.digest })
                             }
                             await successCallback?.(result)

@@ -6,10 +6,10 @@ type NetworkType = 'testnet' | 'mainnet';
 
 const configs = {
     testnet: {
-        Package: "0x0000000000000000000000000000000000000000",
+        Package: process.env.TESTNET_PACKAGE_ID!,
     },
     mainnet: {
-        Package: "0x1111111111111111111111111111111111111111",
+        Package: process.env.MAINNET_PACKAGE_ID!,
     }
 } as const satisfies Record<NetworkType, ContractAddresses>;
 
