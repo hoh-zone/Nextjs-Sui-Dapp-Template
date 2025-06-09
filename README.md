@@ -26,7 +26,7 @@ npx create-nextjs-sui-dapp-template
 按照提示进行项目设置：
 
 1. 输入项目名称
-2. 选择要使用的 Sui 网络（testnet 或 mainnet）
+2. 选择要使用的 Sui 网络（devnet、testnet 或 mainnet）
    - 注意：您可以在 `.env` 文件中随时更改网络设置
 
 ## 快速开始
