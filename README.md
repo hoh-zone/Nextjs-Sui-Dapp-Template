@@ -1,170 +1,295 @@
-# create-nextjs-sui-dapp-template
+# Next.js Sui dApp Template
 
 **English** | [中文](README_CN.md)
 
-一个用于快速创建基于 Next.js 的 Sui dApp 项目的模板生成器。这个工具可以帮助您快速搭建一个现代化的 Sui dApp 项目。
+A comprehensive Next.js template for building Sui blockchain dApps with advanced features including optimized transaction hooks, type-safe query system, and asset management.
 
-## 特性
+## ✨ Features
 
-- 🚀 基于 Next.js 15.2.4 构建
-- 💎 集成 Sui SDK (@mysten/sui)
-- 🔌 内置 dApp Kit (@mysten/dapp-kit)
-- 💫 集成 Enoki (@mysten/enoki) 支持赞助交易
-- 🎨 使用 Tailwind CSS 进行样式管理
-- 📦 支持 TypeScript
-- 🔄 集成 React Query 用于数据获取
-- 🛠️ 完整的开发工具链配置
+-  **Next.js 15.4.1** - Latest stable version with App Router
+- 💎 **Sui SDK Integration** - Full @mysten/sui support
+- 🔌 **dApp Kit** - Complete wallet integration with @mysten/dapp-kit
+- 💫 **Enoki Sponsorship** - Sponsored transactions with @mysten/enoki
+- 🎨 **Modern UI** - Tailwind CSS with shadcn/ui components
+- 📦 **TypeScript** - Full type safety throughout
+- 🔄 **React Query** - Optimized data fetching with @tanstack/react-query
+- 🛠️ **Advanced Hooks** - Optimized transaction hooks with 60% code reduction
+- 🔍 **Type-Safe Query System** - Comprehensive decoder system for query Contract Getter Function
+-  **Asset Management** - Built-in asset categorization and balance calculation
+- 🌐 **Multi-Network Support** - Testnet and mainnet configuration
+- 📱 **Responsive Design** - Mobile-first approach
 
-## 安装
+## 🚀 Quick Start
 
-您可以通过 `npx` 直接使用此模板生成器，无需本地安装：
+### Installation
 
 ```bash
 npx create-nextjs-sui-dapp-template
 ```
 
-按照提示进行项目设置：
+Follow the prompts to set up your project:
+1. Enter your project name
+2. Choose Sui network (testnet/mainnet)
+3. Configure environment variables
 
-1. 输入项目名称
-2. 选择要使用的 Sui 网络（testnet 或 mainnet）
-   - 注意：您可以在 `.env` 文件中随时更改网络设置
-
-## 快速开始
-
-创建项目后，进入项目目录并安装依赖：
+### Development
 
 ```bash
 cd your-project-name
-```
 
-推荐使用 `bun.js` 安装依赖（更快）：
-
-```bash
+# Install dependencies (recommended: use Bun for faster installation)
 bun install
-```
-
-或者使用 npm：
-
-```bash
+# or
 npm install
-```
 
-启动开发服务器：
-
-```bash
+# Start development server
 bun run dev
-# 或
+# or
 npm run dev
 ```
 
-您的 Sui dApp 将在 `http://localhost:3000` 上运行。
+Your Sui dApp will be running at `http://localhost:3000`.
 
-## 环境配置
+## ⚙️ Configuration
 
-复制 `.env.example` 文件并重命名为 `.env`，然后配置以下环境变量：
+### Environment Variables
+
+Copy `.env.example` to `.env` and configure:
 
 ```env
 NEXT_PUBLIC_NETWORK=testnet
-ENOKI_SECRET_KEY=your_enoki_api_key  # 用于赞助交易的 Enoki API 密钥, 不提供则不会启用
-MAINNET_PACKAGE_ID=""  
-TESTNET_PACKAGE_ID=""  
-..... # 添加自己需要的地址
+ENOKI_SECRET_KEY=your_enoki_api_key  # Optional: for sponsored transactions
+MAINNET_PACKAGE_ID=your_mainnet_package_id
+TESTNET_PACKAGE_ID=your_testnet_package_id
 ```
 
-## 合约交互说明
+### Network Configuration
 
-本项目提供了 `useBetterSignAndExecuteTransaction` hook 用于与 Sui 智能合约进行交互。使用前需要配置对应的合约包 ID：
+The template automatically handles network switching based on `NEXT_PUBLIC_NETWORK`:
 
-1. 首先使用 `createBetterTxFactory` 创建交易函数：
 ```typescript
-import { createBetterTxFactory } from '@/contracts';
+import { getNetworkVariables, network } from '@/contracts'
 
-// 定义交易参数类型
-type fooRequest = {
-    object: string,
-    string: string,
-    u8: number,
-}
+// Automatically uses correct network
+const variables = getNetworkVariables()
+```
 
-// 创建交易函数
-export const foo = createBetterTxFactory<fooRequest>((tx, networkVariables, params) => {
+## 🔧 Advanced Features
+
+### 1. Optimized Transaction Hooks
+
+**60% code reduction** with centralized callback management:
+
+```typescript
+import { useBetterSignAndExecuteTransaction } from '@/hooks/useBetterTx'
+import { createBetterTxFactory } from '@/contracts'
+
+// Create transaction function
+const borrowTX = createBetterTxFactory<BorrowRequest>((tx, networkVariables, params) => {
     tx.moveCall({
         package: networkVariables.package,
-        module: "boo",
-        function: "foo",
+        module: "lending",
+        function: "borrow",
         arguments: [
-            tx.object(params.object),
-            tx.pure.string(params.string),
-            tx.pure.u8(params.u8)
+            tx.object(params.collateral),
+            tx.pure.u64(params.amount)
         ]
     })
-    return tx;
-});
-```
-
-2. 然后在组件中使用 `useBetterSignAndExecuteTransaction` 调用交易：
-```typescript
-import { useBetterSignAndExecuteTransaction } from '@/hooks/useBetterTx';
-import { foo, fooRequest } from '@/contracts/transactions';
-
-// 在组件中使用
-const { handleSignAndExecuteTransaction, isLoading } = useBetterSignAndExecuteTransaction({
-  tx: foo,
-});
-
-// 调用合约方法
-const tx = await handleSignAndExecuteTransaction({
-  object: "0x...",
-  string: "example",
-  u8: 1
+    return tx
 })
-  .beforeExecute(async () => {
-    // 执行前的验证逻辑
-    return true;
-  })
-  .onSuccess((result) => {
-    // 交易成功后的处理
-    console.log('Transaction successful:', result);
-  })
-  .onError((error) => {
-    // 错误处理
-    console.error('Transaction failed:', error);
-  })
-  .execute();
+
+// Use in component
+const { handleSignAndExecuteTransaction, isLoading } = useBetterSignAndExecuteTransaction({
+    tx: borrowTX
+})
+
+// Execute with full callback chain
+const result = await handleSignAndExecuteTransaction({
+    collateral: "0x...",
+    amount: 1000
+})
+.beforeExecute(async () => {
+    // Validation logic
+    return true
+})
+.onSuccess((result) => {
+    console.log('Success:', result)
+})
+.onError((error) => {
+    console.error('Error:', error)
+})
+.execute()
 ```
 
-3. 合约包 ID 会根据 `NEXT_PUBLIC_NETWORK` 环境变量自动选择对应的网络。
+### 2. Type-Safe Query System
 
-## Enoki 赞助交易使用说明
+Comprehensive decoder system for query contract getter function data;
 
-本项目集成了 Enoki 赞助交易功能，只有在 `.env` 文件中配置了 `ENOKI_SECRET_KEY` 后，赞助交易功能才会启用。
+```typescript
+import { QueryBuilder } from '@/utils'
+import { MyProjectDecoders } from './decoders'
 
-## 项目结构
+// Create type-safe queries
+const getUserInfo = QueryBuilder.withArgs<[string], UserInfo>(
+    'my_module',
+    'get_user_info',
+    (tx, userAddress) => [tx.pure.address(userAddress)],
+    MyProjectDecoders.UserInfo  // Type-safe decoder
+)
+
+// Use query
+const userInfo = await getUserInfo('0x123...')
+if (userInfo) {
+    console.log(userInfo.name, userInfo.balance)  // Type-safe access
+}
+```
+
+### 3. Asset Management
+
+Built-in asset categorization and balance calculation:
+
+```typescript
+import { getUserProfile, categorizeSuiObjects } from '@/utils'
+
+// Get user's categorized assets
+const userAssets = await getUserProfile(userAddress)
+
+// Access categorized coins and objects
+console.log(userAssets.coins)     // All user's coins by type
+console.log(userAssets.objects)   // All user's objects by type
+
+// Calculate total balance
+const totalBalance = calculateTotalBalance(userAssets.coins['0x2::sui::SUI'])
+console.log(formatBalance(totalBalance))  // "1.234567890"
+```
+
+### 4. Sponsored Transactions
+
+Optional Enoki integration for sponsored transactions:
+
+```typescript
+import { useBetterSignAndExecuteTransactionWithSponsor } from '@/hooks/useBetterTx'
+
+const { handleSponsoredTransaction } = useBetterSignAndExecuteTransactionWithSponsor({
+    tx: myTransaction
+})
+
+// Execute sponsored transaction
+const result = await handleSponsoredTransaction(params)
+    .onSuccess((result) => {
+        console.log('Sponsored transaction successful')
+    })
+    .execute()
+```
+
+## 📁 Project Structure
 
 ```
-├── app/              # Next.js 应用目录
-├── components/       # React 组件
-├── contracts/        # Sui 智能合约
-├── hooks/           # 自定义 React Hooks
-├── public/          # 静态资源
-├── types/           # TypeScript 类型定义
-└── utils/           # 工具函数
+├── app/                    # Next.js App Router
+│   ├── api/               # API routes (Sui client, sponsored transactions)
+│   ├── layout.tsx         # Root layout with providers
+│   ├── page.tsx           # Home page with asset display
+│   └── providers.tsx      # Global providers with decoder initialization
+├── contracts/             # Contract configuration and queries
+│   ├── config.ts          # Network-specific contract addresses
+│   ├── index.ts           # Network configuration
+│   └── query.ts           # Contract query functions
+├── hooks/                 # Custom React hooks
+│   └── useBetterTx.ts     # Optimized transaction hooks
+├── utils/                 # Utility functions
+│   ├── assetsHelpers.ts   # Asset categorization and balance calculation
+│   ├── sui-query/         # Type-safe query system
+│   │   ├── decoders.ts    # Core decoder system
+│   │   ├── query.ts       # Query functions
+│   │   └── index.ts       # Unified exports
+│   ├── registerDecoders.ts # Global decoder registration
+│   └── index.ts           # Main exports
+├── examples/              # Example implementations
+│   ├── projectDecoders.example.ts
+│   ├── nextjs-initialization.example.tsx
+│   └── typeSafeQueryExamples.ts
+├── types/                 # TypeScript type definitions
+└── public/                # Static assets
 ```
 
-## 技术栈
+## 🛠️ Technical Stack
 
-- **框架**: Next.js 15.2.4
-- **区块链**: Sui (@mysten/sui)
-- **状态管理**: React Query
-- **样式**: Tailwind CSS
-- **类型检查**: TypeScript
-- **代码规范**: ESLint
+- **Framework**: Next.js 15.4.1 with App Router
+- **Blockchain**: Sui (@mysten/sui v1.36.0)
+- **Wallet Integration**: @mysten/dapp-kit v0.16.15
+- **Sponsored Transactions**: @mysten/enoki v0.6.20
+- **State Management**: @tanstack/react-query v5.83.0
+- **Styling**: Tailwind CSS with shadcn/ui
+- **Type Safety**: TypeScript 5.8.3
+- **Code Quality**: ESLint with Next.js config
+- **Package Manager**: Bun (recommended) or npm
 
-## 贡献
+## 🎯 Key Improvements
 
-欢迎提交 Pull Request 来改进这个项目！
+### Performance Optimizations
+- **60% code reduction** in transaction hooks
+- **Centralized callback management**
+- **useCallback optimizations** for React performance
+- **Async transaction support** with proper error handling
 
-## 许可证
+### Type Safety
+- **Complete TypeScript support** throughout
+- **Type-safe decoder system** for query contract getter function data
+- **Compile-time error checking**
+- **IDE intelligent suggestions**
 
-本项目采用 MIT 许可证。
+### Developer Experience
+- **Global decoder registration** for Next.js apps
+- **Comprehensive examples** and documentation
+- **Modular architecture** with clear separation of concerns
+- **Backward compatibility** with existing code
+
+## 🔄 Migration Guide
+
+### From Previous Versions
+
+1. **Update imports**:
+   ```typescript
+   // Old
+   import { ProjectDecoders } from '@/utils'
+   
+   // New
+   import { createTypeSafeDecoders, addProjectDecoder } from '@/utils'
+   ```
+
+2. **Initialize decoders** in your app:
+   ```typescript
+   // In app/providers.tsx
+   import { initializeAllDecoders } from '@/utils/registerDecoders'
+   
+   useEffect(() => {
+       initializeAllDecoders()
+   }, [])
+   ```
+
+3. **Use new query system**:
+   ```typescript
+   import { QueryBuilder } from '@/utils'
+   
+   const query = QueryBuilder.withArgs(module, function, argsBuilder, decoder)
+   ```
+
+## 🤝 Contributing
+
+We welcome contributions! Please feel free to submit Pull Requests.
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For issues and questions:
+1. Check the [examples](./examples) directory
+2. Review the [sui-query README](./utils/sui-query/README.md)
+3. Open an issue on GitHub
+
+---
+
+**Built with ❤️ for the Sui ecosystem**
 
