@@ -9,16 +9,6 @@ function getNetworkVariables(network: Network) {
     return networkConfig[network].variables;
 }
 
-function createBetterTxFactory<T extends Record<string, unknown>>(
-    fn: (tx: Transaction, networkVariables: NetworkVariables, params: T) => Transaction
-) {
-    return (params: T) => {
-        const tx = new Transaction();
-        const networkVariables = getNetworkVariables(network);
-        return fn(tx, networkVariables, params);
-    };
-}
-
 type Network = "mainnet" | "testnet"
 
 const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
@@ -37,6 +27,6 @@ const { networkConfig, useNetworkVariables } = createNetworkConfig({
 // 创建全局 SuiClient 实例
 const suiClient = new SuiClient({ url: networkConfig[network].url });
 
-export { getNetworkVariables, networkConfig, network, suiClient, createBetterTxFactory, useNetworkVariables };
+export { getNetworkVariables, networkConfig, network, suiClient,useNetworkVariables };
 export type { NetworkVariables };
 
