@@ -21,8 +21,8 @@ async function generateProject() {
     {
       type: 'list',
       name: 'network',
-      message: 'Which Sui network do you want to use?',
-      choices: ['testnet', 'mainnet'],
+      message: 'Which Sui network do you want to use? (defult testnet)',
+      choices: ['devnet','testnet', 'mainnet'],
       default: 'testnet'
     }
   ];

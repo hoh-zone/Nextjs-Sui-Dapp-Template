@@ -4,7 +4,7 @@ import { z } from "zod";
 import { isValidSuiAddress } from "@mysten/sui/utils";
 
 const sponsorTxSchema = z.object({
-  network: z.enum(["mainnet", "testnet"]),
+  network: z.enum(["devnet", "testnet", "mainnet"]),
   txBytes: z.string().min(1, "Transaction bytes cannot be empty"),
   sender: z.string().refine((val) => {
     return isValidSuiAddress(val)

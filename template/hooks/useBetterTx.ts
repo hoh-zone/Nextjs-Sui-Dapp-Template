@@ -240,7 +240,7 @@ export function useBetterSignAndExecuteTransactionWithSponsor<TArgs extends unkn
     const [isLoading, setIsLoading] = useState(false)
 
     const handleSignAndExecuteTransactionWithSponsor = useCallback((
-        network: "mainnet" | "testnet",
+        network: "devnet" | "testnet" | "mainnet",
         sender: string,
         allowedAddresses?: string[],
         ...args: TArgs

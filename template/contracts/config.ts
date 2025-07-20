@@ -2,9 +2,12 @@ interface ContractAddresses {
     [key: string]: string;
 }
 
-type NetworkType = 'testnet' | 'mainnet';
+type NetworkType = 'devnet' | 'testnet' | 'mainnet';
 
 const configs = {
+    devnet: {
+        Package: process.env.DEVNET_PACKAGE_ID!,
+    },
     testnet: {
         Package: process.env.TESTNET_PACKAGE_ID!,
     },
