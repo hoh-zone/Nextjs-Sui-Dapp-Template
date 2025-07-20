@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
+import { execSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -60,6 +61,14 @@ async function generateProject() {
     readmeContent = readmeContent.replace(/{{PROJECT_NAME}}/g, answers.projectName);
     await fs.writeFile(readmePath, readmeContent);
     console.log(chalk.green('Updated README.md'));
+
+    // Git init
+    try {
+      execSync('git init', { cwd: targetDir, stdio: 'ignore' });
+      console.log(chalk.green('Initialized a new Git repository'));
+    } catch (gitError) {
+      console.warn(chalk.yellow('⚠️ Git init failed. You can initialize it manually.'));
+    }
 
     console.log(chalk.green(`\nProject ${answers.projectName} has been created successfully!`));
     console.log(chalk.yellow('\nTo get started, run the following commands:'));
