@@ -21,7 +21,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Copy only the build output and required files
-COPY --from=builder /app/.next .next
+COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public public
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/package-lock.json ./package-lock.json
