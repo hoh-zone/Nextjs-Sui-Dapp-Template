@@ -1,21 +1,27 @@
 import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { SuiGraphQLClient } from "@mysten/sui/graphql";
 
-type NetworkVariables = typeof mainnetVariables | typeof testnetVariables;
+type NetworkVariables = typeof devnetVariables | typeof testnetVariables | typeof mainnetVariables;
 
 function getNetworkVariables() {
-    return network === "mainnet" ? mainnetVariables : testnetVariables;
+    if (network === "mainnet") return mainnetVariables;
+    if (network === "testnet") return testnetVariables;
+    return devnetVariables;
 }
 
 
-type Network = "mainnet" | "testnet"
+type Network = "devnet" | "testnet" | "mainnet"
 
-const mainnetVariables = {
-    package: process.env.MAINNET_PACKAGE_ID
+const devnetVariables = {
+    package: process.env.DEVNET_PACKAGE_ID
 }
 
 const testnetVariables = {
     package: process.env.TESTNET_PACKAGE_ID
+}
+
+const mainnetVariables = {
+    package: process.env.MAINNET_PACKAGE_ID
 }
 
 const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";

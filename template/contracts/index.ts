@@ -9,17 +9,21 @@ function getNetworkVariables(network: Network) {
     return networkConfig[network].variables;
 }
 
-type Network = "mainnet" | "testnet"
+type Network = "devnet" | "testnet" | "mainnet"
 
 const network = (process.env.NEXT_PUBLIC_NETWORK as Network) || "testnet";
 
 const { networkConfig, useNetworkVariables } = createNetworkConfig({
+    devnet: {
+        url: getFullnodeUrl("devnet"),
+        variables: getContractConfig("devnet"),
+    },
     testnet: {
         url: getFullnodeUrl("testnet"),
         variables: getContractConfig("testnet"),
     },
     mainnet: {
-        url: getFullnodeUrl("mainnet"), 
+        url: getFullnodeUrl("mainnet"),
         variables: getContractConfig("mainnet"),
     }
 });

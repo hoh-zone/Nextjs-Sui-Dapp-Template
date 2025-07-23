@@ -29,7 +29,7 @@ npx create-nextjs-sui-dapp-template
 
 Follow the prompts to set up your project:
 1. Enter your project name
-2. Choose Sui network (testnet/mainnet)
+2. Choose Sui network (devnet/testnet/mainnet)
 3. Configure environment variables
 
 ### Development

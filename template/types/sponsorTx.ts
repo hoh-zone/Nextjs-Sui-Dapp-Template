@@ -1,5 +1,5 @@
 export interface SponsorTxRequestBody {
-    network: "mainnet" | "testnet";
+    network: "devnet" | "testnet" | "mainnet";
     txBytes: string;
     sender: string;
     allowedAddresses?: string[];
