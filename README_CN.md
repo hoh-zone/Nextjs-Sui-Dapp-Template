@@ -246,9 +246,49 @@ const result = await handleSponsoredTransaction(params)
 
 ## 🔄 迁移指南
 
-### 从旧版本迁移
+### 自动更新（推荐）
 
-1. **更新导入**:
+更新现有项目最简单的方法是使用我们的自动更新脚本：
+
+```bash
+# 全局安装或更新模板工具
+npm install -g create-nextjs-sui-dapp-template@latest
+
+# 在您的项目目录中运行更新脚本
+npx update-nextjs-sui-dapp-template
+
+# 或者如果已经全局安装
+update-nextjs-sui-dapp-template
+```
+
+更新脚本将：
+- ✅ 自动创建项目备份
+- ✅ 允许您选择性更新框架组件
+- ✅ 更新依赖包版本
+- ✅ 提供详细的后续步骤指导
+
+### 从旧版本手动迁移
+
+如果您喜欢手动控制更新过程：
+
+1. **备份项目**：
+   ```bash
+   cp -r my-project my-project-backup
+   ```
+
+2. **更新核心依赖**：
+   ```bash
+   npm install @mysten/dapp-kit@^0.16.15 @mysten/enoki@^0.6.20 @mysten/sui@^1.36.0 @tanstack/react-query@^5.83.0 next@^15.4.1
+   ```
+
+3. **从最新模板复制核心文件**：
+   - `utils/sui-query/` 整个目录
+   - `hooks/useBetterTx.ts`
+   - `utils/registerDecoders.ts`
+   - `utils/assetsHelpers.ts`
+   - `utils/index.ts`
+
+4. **更新导入**:
    ```typescript
    // 旧
    import { ProjectDecoders } from '@/utils'
@@ -257,7 +297,7 @@ const result = await handleSponsoredTransaction(params)
    import { createTypeSafeDecoders, addProjectDecoder } from '@/utils'
    ```
 
-2. **在您的应用中初始化解码器**:
+5. **在您的应用中初始化解码器**:
    ```typescript
    // 在 app/providers.tsx 中
    import { initializeAllDecoders } from '@/utils/registerDecoders'
@@ -267,12 +307,33 @@ const result = await handleSponsoredTransaction(params)
    }, [])
    ```
 
-3. **使用新的查询系统**:
+6. **使用新的查询系统**:
    ```typescript
    import { QueryBuilder } from '@/utils'
    
    const query = QueryBuilder.withArgs(module, function, argsBuilder, decoder)
    ```
+
+### 版本对比
+
+| 功能 | 旧版本 | 新版本 (v1.2.0) |
+|------|--------|------------------|
+| 交易钩子 | 基础版本 | **60% 代码减少**，集中式回调管理 |
+| 查询系统 | 基础查询 | **类型安全**解码器系统 |
+| 资产管理 | 手动处理 | **内置**分类和余额计算 |
+| 解码器注册 | 手动管理 | **全局自动**注册机制 |
+| Next.js 版本 | 14.x | **15.4.1** 最新版本 |
+
+### 更新验证清单
+
+更新完成后，请验证：
+
+- [ ] 所有导入语句正确
+- [ ] 解码器初始化正常运行
+- [ ] 交易功能正常工作
+- [ ] 查询函数返回正确数据
+- [ ] 资产显示正确
+- [ ] 没有 TypeScript 错误
 
 ## 🤝 贡献
 

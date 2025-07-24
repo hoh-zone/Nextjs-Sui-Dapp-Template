@@ -246,9 +246,49 @@ const result = await handleSponsoredTransaction(params)
 
 ## 🔄 Migration Guide
 
-### From Previous Versions
+### Automatic Update (Recommended)
 
-1. **Update imports**:
+The easiest way to update your existing project is using our automated update script:
+
+```bash
+# Install or update the template tool globally
+npm install -g create-nextjs-sui-dapp-template@latest
+
+# Run the update script in your project directory
+npx update-nextjs-sui-dapp-template
+
+# Or if you have it installed globally
+update-nextjs-sui-dapp-template
+```
+
+The update script will:
+- ✅ Automatically create a backup of your project
+- ✅ Allow you to selectively update framework components
+- ✅ Update dependency versions
+- ✅ Provide detailed next steps guidance
+
+### Manual Migration from Previous Versions
+
+If you prefer manual control over the update process:
+
+1. **Backup your project**:
+   ```bash
+   cp -r my-project my-project-backup
+   ```
+
+2. **Update core dependencies**:
+   ```bash
+   npm install @mysten/dapp-kit@^0.16.15 @mysten/enoki@^0.6.20 @mysten/sui@^1.36.0 @tanstack/react-query@^5.83.0 next@^15.4.1
+   ```
+
+3. **Copy core files from the latest template**:
+   - `utils/sui-query/` entire directory
+   - `hooks/useBetterTx.ts`
+   - `utils/registerDecoders.ts`
+   - `utils/assetsHelpers.ts`
+   - `utils/index.ts`
+
+4. **Update imports**:
    ```typescript
    // Old
    import { ProjectDecoders } from '@/utils'
@@ -257,7 +297,7 @@ const result = await handleSponsoredTransaction(params)
    import { createTypeSafeDecoders, addProjectDecoder } from '@/utils'
    ```
 
-2. **Initialize decoders** in your app:
+5. **Initialize decoders** in your app:
    ```typescript
    // In app/providers.tsx
    import { initializeAllDecoders } from '@/utils/registerDecoders'
@@ -267,12 +307,33 @@ const result = await handleSponsoredTransaction(params)
    }, [])
    ```
 
-3. **Use new query system**:
+6. **Use new query system**:
    ```typescript
    import { QueryBuilder } from '@/utils'
    
    const query = QueryBuilder.withArgs(module, function, argsBuilder, decoder)
    ```
+
+### Version Comparison
+
+| Feature | Old Version | New Version (v1.2.0) |
+|---------|-------------|----------------------|
+| Transaction Hooks | Basic version | **60% code reduction**, centralized callback management |
+| Query System | Basic queries | **Type-safe** decoder system |
+| Asset Management | Manual handling | **Built-in** categorization and balance calculation |
+| Decoder Registration | Manual management | **Global automatic** registration mechanism |
+| Next.js Version | 14.x | **15.4.1** Latest version |
+
+### Update Verification Checklist
+
+After updating, please verify:
+
+- [ ] All import statements are correct
+- [ ] Decoder initialization runs properly
+- [ ] Transaction functionality works normally
+- [ ] Query functions return correct data
+- [ ] Assets display correctly
+- [ ] No TypeScript errors
 
 ## 🤝 Contributing
 
