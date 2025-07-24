@@ -73,8 +73,12 @@ async function generateProject() {
     console.log(chalk.green(`\nProject ${answers.projectName} has been created successfully!`));
     console.log(chalk.yellow('\nTo get started, run the following commands:'));
     console.log(chalk.cyan(`\ncd ${answers.projectName}`));
-    console.log(chalk.cyan('npm install'));
-    console.log(chalk.cyan('npm run dev'));
+    console.log(chalk.cyan('# Install dependencies (choose one):'));  
+    console.log(chalk.cyan('bun install    # Recommended for faster installation'));  
+    console.log(chalk.cyan('# or'));  
+    console.log(chalk.cyan('npm install'));  
+    console.log(chalk.cyan('\n# Start development server:'));  
+    console.log(chalk.cyan('bun run dev    # or npm run dev')); 
 
   } catch (err) {
     console.error(chalk.red('Error creating project:'), err);
